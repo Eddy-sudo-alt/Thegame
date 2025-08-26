@@ -1,69 +1,81 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// --- Einfache Stats ---
-let creepStats = { hp: 20, dmg: 2, speed: 1.5 };
-let heroStats  = { hp: 100, dmg: 5, speed: 1 };
+// Basiswerte
+let stats = {
+  small: { hp:1, dmg:1, spd:1 },
+  big:   { hp:1, dmg:1, spd:1 }
+};
 
-// --- Spielfiguren ---
 class Unit {
-  constructor(x, y, hp, dmg, speed, team, type) {
-    this.x = x; this.y = y;
-    this.hp = hp; this.maxHp = hp;
-    this.dmg = dmg; this.speed = speed;
+  constructor(type, team) {
+    this.type = type; // "small" oder "big"
     this.team = team; // "A" oder "B"
-    this.type = type; // "creep" oder "hero"
-    this.size = type==="hero" ? 18 : 10;
+    let s = stats[type];
+    this.hp = s.hp;
+    this.dmg = s.dmg;
+    this.spd = s.spd;
+    this.size = (type==="small") ? 10 : 20;
+    this.x = (team==="A") ? 50 : canvas.width-50;
+    this.y = (type==="small") ? 100 : 200;
   }
+
   draw() {
-    ctx.fillStyle = (this.team === "A") ? "cyan" : "orange";
+    ctx.fillStyle = (this.team==="A") ? "cyan" : "orange";
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
     ctx.fill();
-
     // HP-Bar
     ctx.fillStyle = "red";
     ctx.fillRect(this.x-15, this.y-this.size-8, 30, 4);
     ctx.fillStyle = "lime";
-    ctx.fillRect(this.x-15, this.y-this.size-8, 30*(this.hp/this.maxHp), 4);
+    ctx.fillRect(this.x-15, this.y-this.size-8, 30*(this.hp/stats[this.type].hp), 4);
   }
+
   update() {
-    this.x += (this.team==="A" ? this.speed : -this.speed);
+    this.x += (this.team==="A" ? this.spd : -this.spd);
   }
 }
 
 let units = [];
+
+// Spawns
 function spawnWave() {
-  // Creeps
-  units.push(new Unit(50,150, creepStats.hp, creepStats.dmg, creepStats.speed, "A","creep"));
-  units.push(new Unit(550,150, creepStats.hp, creepStats.dmg, creepStats.speed, "B","creep"));
-  // Helden
-  if (Math.random()<0.3) {
-    units.push(new Unit(50,200, heroStats.hp, heroStats.dmg, heroStats.speed, "A","hero"));
-    units.push(new Unit(550,100, heroStats.hp, heroStats.dmg, heroStats.speed, "B","hero"));
-  }
+  // kleine Kreise
+  units.push(new Unit("small","A"));
+  units.push(new Unit("small","B"));
+  // große Kreise
+  units.push(new Unit("big","A"));
+  units.push(new Unit("big","B"));
 }
-setInterval(spawnWave, 3000);
+setInterval(spawnWave, 4000);
+
+// Upgrade
+function upgradeUnit(type) {
+  stats[type].hp += 1;
+  stats[type].dmg += 1;
+  stats[type].spd += 1;
+  alert(`${type==="small"?"Kleine":"Große"} Kreise verbessert!`);
+}
 
 // Kampf-Logik
-function fight(u1,u2) {
-  u1.hp -= u2.dmg;
-  u2.hp -= u1.dmg;
+function fight(a,b) {
+  a.hp -= b.dmg;
+  b.hp -= a.dmg;
 }
 
-// --- Upgrade Funktionen ---
-function upgradeCreeps() {
-  creepStats.hp += 5;
-  creepStats.dmg += 1;
-  alert("Creeps verbessert!");
-}
-function upgradeHero() {
-  heroStats.hp += 20;
-  heroStats.dmg += 2;
-  alert("Held verbessert!");
+// Simpler Prioritäts-Kampf
+function checkFights() {
+  for (let type of ["small","big"]) {
+    let groupA = units.filter(u => u.team==="A" && u.type===type);
+    let groupB = units.filter(u => u.team==="B" && u.type===type);
+    for (let i=0; i<Math.min(groupA.length,groupB.length); i++) {
+      if(groupA[i] && groupB[i]) fight(groupA[i],groupB[i]);
+    }
+  }
 }
 
-// --- Loop ---
+// Game Loop
 function gameLoop() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -73,18 +85,8 @@ function gameLoop() {
     u.draw();
   }
 
-  // Kämpfe prüfen
-  for (let i=0; i<units.length; i++) {
-    for (let j=i+1; j<units.length; j++) {
-      let a = units[i], b = units[j];
-      if (a && b && a.team!==b.team) {
-        let dx = a.x-b.x, dy=a.y-b.y;
-        if (Math.hypot(dx,dy) < a.size+b.size) {
-          fight(a,b);
-        }
-      }
-    }
-  }
+  // Kämpfen lassen
+  checkFights();
 
   // Tote entfernen
   units = units.filter(u => u.hp>0 && u.x>0 && u.x<canvas.width);
