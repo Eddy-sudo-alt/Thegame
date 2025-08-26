@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8">
-  <title>MOBA Simulator v0.1</title>
+  <title>MOBA Simulator – Kampf Arena</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
     body { margin:0; background:#111; color:#fff; font-family:sans-serif; text-align:center; }
@@ -13,12 +13,12 @@
   </style>
 </head>
 <body>
-  <h2>MOBA Simulator v0.1</h2>
+  <h2>MOBA Simulator – Kampf Arena</h2>
   <canvas id="game" width="600" height="300"></canvas>
 
   <div id="controls">
-    <button class="upgrade" onclick="upgradeCreeps()">Creeps stärker</button>
-    <button class="upgrade" onclick="upgradeHero()">Held stärker</button>
+    <button class="upgrade" onclick="upgradeUnit('small')">Upgrade kleine Kreise</button>
+    <button class="upgrade" onclick="upgradeUnit('big')">Upgrade große Kreise</button>
   </div>
 
   <script src="main.js"></script>
